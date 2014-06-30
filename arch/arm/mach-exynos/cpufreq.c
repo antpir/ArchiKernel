@@ -849,6 +849,7 @@ err_vdd_arm:
 }
 late_initcall(exynos_cpufreq_init);
 
+#ifdef CONFIG_ARCHIKERNEL_CPU_VOLTAGE_INTERFACE
 /* sysfs interface for UV control */
 ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf) {
 
@@ -907,3 +908,4 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 	}
 	return count;
 }
+#endif
