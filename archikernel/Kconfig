@@ -368,6 +368,12 @@ config ARCHIKERNEL_CPU_VOLTAGE_INTERFACE
 config ARCHIKERNEL_CPU_OC_1600
 	bool "Enable overclocking of the CPU to 1600Mhz"
 	help
-		This option enables additional CPU clock frequencies up to 1600Mhz.
-		
+		This option enables additional CPU clock frequencies up to 1600Mhz.	
+
+config ARCHIKERNEL_TOUCH_LED_CONTROL
+	bool "Enable touch LED control"
+	help
+		This option enable the touch LED control to enable/disable the backlight
+		of the hardware buttons.
+
 endmenu
