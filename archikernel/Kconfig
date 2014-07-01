@@ -279,6 +279,13 @@ config ARCHIKERNEL_CPU_OC_1600_DEFAULT
 		This option will set maximum frequency to OC frequency by default.
 		Use with caution!
 
+config ARCHIKERNEL_GPU_CONTROL
+	bool "Enable GPU clock control and voltage interface"
+	depends on MALI400
+	default y
+	help
+		This enables a sysfs interface to control gpu clock and voltage.
+
 config ARCHIKERNEL_TOUCH_LED_CONTROL
 	bool "Enable touch LED control"
 	depends on !ARCHIKERNEL_TARGET_SYSTEM_SAMSUNG
