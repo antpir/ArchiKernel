@@ -1278,6 +1278,7 @@ static ssize_t touchkey_led_control(struct device *dev,
 		return size;
 	}
 
+#ifdef CONFIG_ARCHIKERNEL_TOUCH_LED_CONTROL
 	if (data == 2 && touch_led_handling == TOUCHKEY_LED_ROM)
 		touchkey_pressed = TOUCHKEY_HW_TIMEDOUT; // Yank555.lu : h/w light disabled, consider timeout reached
 
@@ -1293,7 +1294,7 @@ static ssize_t touchkey_led_control(struct device *dev,
 		data = ledCmd[data-1];
 
 	}
-#ifdef CONFIG_ARCHIKERNEL_TOUCH_LED_CONTROL
+
 	// Yank555.lu : KERNEL is handling (older CM)
 	if (touch_led_handling == TOUCHKEY_LED_KERNEL) {
 	    if (touch_led_disabled == 0) {
