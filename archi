@@ -1,0 +1,114 @@
+#!/bin/bash
+
+#     _             _     _ _  __                    _
+#    / \   _ __ ___| |__ (_) |/ /___ _ __ _ __   ___| |
+#   / _ \ | '__/ __| '_ \| | ' // _ \ '__| '_ \ / _ \ |
+#  / ___ \| | | (__| | | | | . \  __/ |  | | | |  __/ |
+# /_/   \_\_|  \___|_| |_|_|_|\_\___|_|  |_| |_|\___|_|
+#
+# Copyright 2014 Łukasz "JustArchi" Domeradzki
+# Contact: JustArchi@JustArchi.net
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Usage: ./archi <clean> <repack> <dirty> <configtest> <image> <bare> config
+# Usage: source archi source
+# Clean - Calls make clean and make mrproper.
+# Repack - Does not rebuild kernel at all.
+# Dirty - Does not make clean, make mrproper or make defconfig, uses current config and current files.
+# Configtest - Does make clean only, does not call make mrproper or make defconfig.
+# Image - Deprecated option for creating boot.img and not zImage + modules only. We use more flexible AnyKernel method, so this is deprecated.
+# Bare - We're not putting compiled files in proper dirs, this should be used if you want to manually take zImage and modules.
+# Source - will export proper variables like ARCH and CROSS_COMPILE only
+
+SOURCE=0
+CLEAN=0
+REPACK=0
+DIRTY=0
+CONFIGTEST=0
+IMAGE=0
+BARE=0
+JOBS="$(grep -c "processor" "/proc/cpuinfo")"
+HOME="$(dirname ~)$(basename ~)" # This hack is required because arm-eabi-nm has problems following ~
+TOOLCHAIN="$HOME/git/Linaro/bin/arm-eabi-"
+TARGETDIRKERNEL="$HOME/shared/kernel/$(basename "$(pwd)")/core"
+TARGETDIRMODULES="$HOME/shared/kernel/$(basename "$(pwd)")/system/lib/modules"
+
+for ARG in "$@"; do
+	case "$ARG" in
+	source) SOURCE=1 ;;
+	clean) CLEAN=1 ;;
+	repack) REPACK=1 ;;
+	dirty) DIRTY=1 ;;
+	configtest) CONFIGTEST=1 ;;
+	image) IMAGE=1 ;;
+	bare) BARE=1 ;;
+	*) TARGETCONFIG="$ARG" ;;
+	esac
+done
+
+export ARCH=arm
+export CROSS_COMPILE="$TOOLCHAIN"
+
+if [[ $SOURCE -eq 1 ]]; then
+        return
+else
+	set -e
+	if [[ $REPACK -eq 0 ]]; then
+		if [[ $DIRTY -eq 0 ]]; then
+				make -j"$JOBS" clean
+			if [[ $CONFIGTEST -eq 0 ]]; then
+				make -j"$JOBS" mrproper
+				if [[ $CLEAN -eq 0 ]]; then
+					if [[ ! -z "TARGETCONFIG" && -f "arch/arm/configs/$TARGETCONFIG" ]]; then
+						make -j"$JOBS" "$TARGETCONFIG"
+					else
+						echo "Specified config $TARGETCONFIG does not exist"
+						exit 1
+					fi
+				else
+					exit 0
+				fi
+			fi
+		fi
+			make -j"$JOBS" all
+	fi
+	mkdir -p "$TARGETDIRKERNEL" "$TARGETDIRMODULES"
+	if [[ "$BARE" -eq 1 ]]; then
+		exit 0
+	elif [[ "$IMAGE" -eq 1 ]]; then
+		rm -rf /tmp/archikernel
+		mkdir -p /tmp/archikernel/out
+		echo "Using custom boot!"
+		unpackbootimg -i "$TARGETDIRKERNEL"/boot.img -o /tmp/archikernel/out
+		cp arch/arm/boot/zImage /tmp/archikernel/out/boot.img-zImage
+		mkbootimg --kernel "/tmp/archikernel/out/boot.img-zImage" \
+				  --ramdisk "/tmp/archikernel/out/boot.img-ramdisk.gz" \
+				  --base "$(cat "/tmp/archikernel/out/boot.img-base")" \
+				  --cmdline "$(cat "/tmp/archikernel/out/boot.img-cmdline")" \
+				  --kernel_offset "$(cat "/tmp/archikernel/out/boot.img-kerneloff")" \
+				  --pagesize "$(cat "/tmp/archikernel/out/boot.img-pagesize")" \
+				  --ramdisk_offset "$(cat "/tmp/archikernel/out/boot.img-ramdiskoff")" \
+				  --tags_offset "$(cat "/tmp/archikernel/out/boot.img-tagsoff")" \
+				  -o "/tmp/archikernel/new.img"
+		mv /tmp/archikernel/new.img "$TARGETDIRKERNEL"
+	else
+		cp arch/arm/boot/zImage "$TARGETDIRKERNEL"
+	fi
+	rm -f "$TARGETDIRMODULES"/*
+	find . -type f -iname "*.ko" | while read line; do
+		${CROSS_COMPILE}strip --strip-unneeded "$line"
+			cp "$line" "$TARGETDIRMODULES"
+	done
+	exit 0
+fi
