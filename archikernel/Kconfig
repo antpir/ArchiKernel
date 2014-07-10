@@ -284,6 +284,7 @@ config ARCHIKERNEL_CPU_OC_1600_DEFAULT
 
 config ARCHIKERNEL_TOUCH_LED_CONTROL
 	bool "Enable touch LED control"
+	depends on !ARCHIKERNEL_TARGET_SYSTEM_SAMSUNG
 	help
 		This option enable the touch LED control to enable/disable the backlight
 		of the hardware buttons.
