@@ -215,6 +215,16 @@ endchoice
 
 comment "Hacks / Workarounds"
 
+config ARCHIKERNEL_TARGET_SYSTEM_HAS_LEGACY_BLOBS
+	bool "System has legacy blobs"
+	help
+		This option should be used if target system has legacy blobs.
+		When activated, it reverts some backports which are useful in
+		combination with newest blobs found i.e. in AOSP. This is purely
+		for solving conflicts between AOSP and Samsung bases. If there's
+		something that works on AOSP and doesn't on Samsung, this should
+		be used.
+
 config ARCHIKERNEL_TARGET_SYSTEM_HAS_NO_SLICE_ENCODING
 	bool "System does not support slice encoding"
 	depends on !ARCHIKERNEL_TARGET_SYSTEM_SAMSUNG

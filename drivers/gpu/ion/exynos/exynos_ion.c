@@ -548,6 +548,10 @@ static int ion_exynos_contig_heap_map_user(struct ion_heap *heap,
 	if (buffer->flags & ION_EXYNOS_NONCACHE_MASK)
 		vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
 
+	#ifdef CONFIG_ARCHIKERNEL_TARGET_SYSTEM_HAS_LEGACY_BLOBS
+	/* Set User Permission */
+	vma->vm_page_prot = pte_mkdirty(vma->vm_page_prot);
+	#endif
 	return remap_pfn_range(vma, vma->vm_start, pfn + vma->vm_pgoff,
 			       vma->vm_end - vma->vm_start,
 			       vma->vm_page_prot);
